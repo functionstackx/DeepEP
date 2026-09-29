@@ -6,6 +6,7 @@
 
 #include "jit/api.hpp"
 #include "elastic/buffer.hpp"
+#include "kernels/elastic/kernel_select.hpp"
 #include "legacy/buffer.hpp"
 
 #ifndef TORCH_EXTENSION_NAME
@@ -32,6 +33,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.attr("min_unordered_gin_qps") = py::int_(deep_ep::elastic::gin_alloc::kMinGinContextCnt);
     m.attr("max_unordered_gin_qps") = py::int_(deep_ep::elastic::gin_alloc::kMaxGinContextCnt);
     m.attr("default_unordered_gin_qps") = py::int_(deep_ep::elastic::gin_alloc::kDefaultGinContextCnt);
+    m.def("use_ordered_hybrid_kernel", &deep_ep::elastic::use_ordered_hybrid_kernel);
 
     // JIT API
     deep_ep::jit::register_apis(m);

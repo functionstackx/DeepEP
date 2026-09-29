@@ -280,7 +280,7 @@ class ElasticBuffer:
             num_allocated_qps: the number of QPs to allocate for RDMA. One GIN context supplies
                 one QP, so this is also the GIN context count. Pass 0 for automatic, which
                 resolves per hybrid kernel mode (see `EP_HYBRID_KERNEL`):
-                  - unordered (default): 11 QPs and 21 signals per QP, for the balance
+                  - unordered (auto on EFA): 11 QPs and 21 signals per QP, for the balance
                     between token batch size and the number of QPs. An explicit value
                     is clamped into [2, 17] with a warning. Requesting fewer
                     QPs gives each context more signals.
@@ -349,7 +349,8 @@ class ElasticBuffer:
             sl_idx = int(os.environ['EP_OVERRIDE_RDMA_SL'])
 
         # Automatic QP count
-        if num_allocated_qps == 0 and (not self.allow_hybrid_mode or os.environ.get('EP_HYBRID_KERNEL', 'unordered') == 'ordered'):
+        ordered_hybrid = self.allow_hybrid_mode and _C.use_ordered_hybrid_kernel()
+        if num_allocated_qps == 0 and (not self.allow_hybrid_mode or ordered_hybrid):
             # Hybrid mode will consume more QPs; the extra QP is for notify warps.
             # The unordered hybrid kernels (`EP_HYBRID_KERNEL=unordered`) instead
             # resolve the QP count in C++ from the GIN signal budget.
@@ -357,7 +358,7 @@ class ElasticBuffer:
                 num_allocated_qps = 65 if check_fast_rdma_atomic_support() else 129
             else:
                 num_allocated_qps = 17
-        elif num_allocated_qps > 0 and self.allow_hybrid_mode and os.environ.get('EP_HYBRID_KERNEL', 'unordered') != 'ordered':
+        elif num_allocated_qps > 0 and self.allow_hybrid_mode and not ordered_hybrid:
             clamped_qps = max(_C.min_unordered_gin_qps, min(num_allocated_qps, _C.max_unordered_gin_qps))
             if clamped_qps != num_allocated_qps:
                 print(f'[WARN] DeepEP clamped num_allocated_qps from {num_allocated_qps} to {clamped_qps}: '

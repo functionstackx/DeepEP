@@ -1,0 +1,32 @@
+name: Hybrid kernel selection
+
+on:
+  pull_request:
+    paths:
+      - csrc/kernels/elastic/kernel_select.hpp
+      - csrc/python_api.cpp
+      - deep_ep/buffers/elastic.py
+      - tests/elastic/*kernel_select*
+      - .github/workflows/kernel-select.yml
+  push:
+    branches:
+      - feat/auto-detect-hybrid-kernel
+    paths:
+      - csrc/kernels/elastic/kernel_select.hpp
+      - csrc/python_api.cpp
+      - deep_ep/buffers/elastic.py
+      - tests/elastic/*kernel_select*
+      - .github/workflows/kernel-select.yml
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python tests/elastic/test_kernel_select.py
